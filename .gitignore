@@ -1,0 +1,7 @@
+.idea
+venv
+*.pyc
+*.ipynb
+*.swp
+*.swo
+*~
