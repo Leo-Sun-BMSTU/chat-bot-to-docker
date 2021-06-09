@@ -3,7 +3,7 @@ import datetime
 import random
 import yaml
 from datetime import datetime
-
+from config import TOKEN
 from asyncio import sleep
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -149,13 +149,19 @@ async def check_members(message: types.Message):
     text = ("Участники Вашей группы:\n{members}").format(members=members)
     await message.answer(text)
 
-@dp.message_handler(commands=["labs"])
-async def test(message: types.Message):
-    await message.answer("Для прожолжения нажмите /enter или введите любой текст. Для отмены нажмите /cancel.")
+@dp.message_handler(commands=["labs"], content_types=['document'])
+async def lab(message: types.Message):
+    await message.answer("Загрузите .pickle-файл для проверки лабораторной работы. Для отмены нажмите /cancel.")
+    document_id = message.document.file_id
+    file_info = await bot.get_file(document_id)
+    fi = file_info.file_path
+    name = message.document.file_name
+    urllib.request.urlretrieve(f'https://api.telegram.org/file/bot{TOKEN}/{fi}', f'./{name}')
+    await bot.send_message(message.from_user.id, 'Файл успешно сохранён')
     await NewLab.Lab.set()
 
 @dp.message_handler(state=NewLab.Lab)
-async def answer(message: types.Message, state: FSMContext):
+async def result(message: types.Message, state: FSMContext):
     user = types.User.get_current()
     lab_number = 1  # Номер лабораторной работы
     lab_result = 1  # Результат лабораторной работы
