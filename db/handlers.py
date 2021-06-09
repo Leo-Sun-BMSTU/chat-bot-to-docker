@@ -3,7 +3,7 @@ import datetime
 import random
 import yaml
 from datetime import datetime
-from config import TOKEN
+
 from asyncio import sleep
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -58,12 +58,12 @@ async def register_user(message: types.Message):
 
 @dp.message_handler(commands=["cancel"], state=NewQuestion)
 async def cancel(message: types.Message, state: FSMContext):
-    await message.answer("Вы отменили тестирование.")
+    await message.answer("Вы отменили тестирование. Для повторной попытки введите /test.")
     await state.reset_state()
 
 @dp.message_handler(commands=["cancel"], state=NewLab)
 async def cancel(message: types.Message, state: FSMContext):
-    await message.answer("Вы отменили проверку.")
+    await message.answer("Вы отменили проверку. Для повторной попытки введите /labs.")
     await state.reset_state()
 
 @dp.message_handler(commands=["test"])
@@ -149,20 +149,31 @@ async def check_members(message: types.Message):
     text = ("Участники Вашей группы:\n{members}").format(members=members)
     await message.answer(text)
 
-@dp.message_handler(commands=["labs"], content_types=['document'])
+@dp.message_handler(commands=["labs"])
 async def lab(message: types.Message):
     await message.answer("Загрузите .pickle-файл для проверки лабораторной работы. Для отмены нажмите /cancel.")
+    await NewLab.Lab.set()
+
+@dp.message_handler(state=NewLab.Lab, content_types=['document'])
+async def result(message: types.Message, state: FSMContext):
+    import urllib
+    from config import TOKEN
+    user = types.User.get_current()
+    user_id = user.id
     document_id = message.document.file_id
     file_info = await bot.get_file(document_id)
     fi = file_info.file_path
     name = message.document.file_name
-    urllib.request.urlretrieve(f'https://api.telegram.org/file/bot{TOKEN}/{fi}', f'./{name}')
-    await bot.send_message(message.from_user.id, 'Файл успешно сохранён')
-    await NewLab.Lab.set()
 
-@dp.message_handler(state=NewLab.Lab)
-async def result(message: types.Message, state: FSMContext):
-    user = types.User.get_current()
+    ext = f" {name} "
+    if check not in ext:
+        await message.answer("Файл должен быть разрешения .pickle!\n")
+        await message.answer("Проверка отменена. Для повторной попытки нажмите /labs.")
+        await state.reset_state()
+    else:
+        urllib.request.urlretrieve(f'https://api.telegram.org/file/bot{TOKEN}/{user_id}/{fi}', f'./{name}')
+        await bot.send_message(message.from_user.id, 'Файл успешно сохранён!')
+
     lab_number = 1  # Номер лабораторной работы
     lab_result = 1  # Результат лабораторной работы
 
@@ -218,4 +229,3 @@ async def result(message: types.Message, state: FSMContext):
 @dp.message_handler()
 async def other_echo(message: Message):
     await message.answer(message.text)
-
