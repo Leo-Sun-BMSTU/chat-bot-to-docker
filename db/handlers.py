@@ -166,7 +166,7 @@ async def result(message: types.Message, state: FSMContext):
     name = message.document.file_name
 
     ext = f" {name} "
-    check = f".pickle"
+    check = f"pickle"
     if check not in ext:
         await message.answer("Файл должен быть разрешения .pickle!\n")
         await message.answer("Проверка отменена. Для повторной попытки нажмите /labs.")
