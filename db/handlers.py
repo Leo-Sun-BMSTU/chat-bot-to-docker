@@ -154,7 +154,7 @@ async def lab(message: types.Message):
     await message.answer("Загрузите .pickle-файл для проверки лабораторной работы. Для отмены нажмите /cancel.")
     await NewLab.Lab.set()
 
-@dp.message_handler(content_types=['document'], state=NewLab.Lab)
+@dp.message_handler(state=NewLab.Lab, content_types=['document'])
 async def result(message: types.Message, state: FSMContext):
     import urllib
     from config import TOKEN
