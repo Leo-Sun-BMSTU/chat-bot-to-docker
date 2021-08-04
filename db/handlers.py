@@ -10,15 +10,15 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart
 from aiogram.types import Message
 
-import database
-from config import admin_id
-from load_all import dp, bot
+import db.database
+from db.config import admin_id
+from telegram.load_all import dp, bot
 
-from states import NewQuestion, NewLab
-from database import Lab, User, Test
+from db.states import NewQuestion, NewLab
+from db.database import Lab, User, Test
 
 
-db = database.DBCommands()
+db = db.database.DBCommands()
 
 
 @dp.message_handler(CommandStart())
@@ -157,7 +157,7 @@ async def lab(message: types.Message):
 @dp.message_handler(state=NewLab.Lab, content_types=['document'])
 async def result(message: types.Message, state: FSMContext):
     import urllib
-    from config import TOKEN
+    from db.config import TOKEN
     user = types.User.get_current()
     user_id = user.id
     document_id = message.document.file_id
@@ -166,7 +166,9 @@ async def result(message: types.Message, state: FSMContext):
     name = message.document.file_name
 
     ext = f" {name} "
+
     check = f"pickle"
+
     if check not in ext:
         await message.answer("Файл должен быть разрешения .pickle!\n")
         await message.answer("Проверка отменена. Для повторной попытки нажмите /labs.")
@@ -230,4 +232,3 @@ async def result(message: types.Message, state: FSMContext):
 @dp.message_handler()
 async def other_echo(message: Message):
     await message.answer(message.text)
-

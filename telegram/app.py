@@ -2,10 +2,9 @@ import asyncio
 
 from aiogram import executor
 
-from config import admin_id
-from database import create_db
+from db.config import admin_id
+from db.database import create_db
 from load_all import bot
-
 
 async def on_shutdown(dp):
     await bot.close()
@@ -17,6 +16,6 @@ async def on_startup(dp):
 
 
 if __name__ == '__main__':
-    from handlers import dp
+    from db.handlers import dp
 
     executor.start_polling(dp, on_shutdown=on_shutdown, on_startup=on_startup)

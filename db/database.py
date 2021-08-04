@@ -6,7 +6,7 @@ from sqlalchemy import (Column, Integer, BigInteger, String,
 from sqlalchemy import sql
 from datetime import datetime
 
-from config import db_pass, db_user, host
+from db.config import db_pass, db_user, host, port
 
 db = Gino()
 
@@ -184,7 +184,8 @@ class DBCommands:
 
 
 async def create_db():
-    await db.set_bind(f'postgresql://{db_user}:{db_pass}@{host}/gino')
+    #breakpoint()
+    await db.set_bind(f'postgresql://{db_user}:{db_pass}@{host}:{port}/gino')
 
     # Create tables
     db.gino: GinoSchemaVisitor
