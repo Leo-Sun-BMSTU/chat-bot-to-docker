@@ -1,3 +1,4 @@
+import os
 import asyncio
 import datetime
 import random
@@ -14,8 +15,8 @@ import database
 from config import admin_id
 from load_all import dp, bot
 
-from states import NewQuestion, NewLab
-from database import Lab, User, Test
+from states import NewName, NewQuestion, NewLab
+from database import User, Lab, Test
 
 
 db = database.DBCommands()
@@ -36,6 +37,8 @@ async def register_user(message: types.Message):
         text = ("Приветствую Вас!\n"
                 "Количество пользователей в базе данных: {count_users}\n"
                 "\n"
+                "Ввести фамилию и имя: /name (обязательно)\n"
+                "\n"
                 "Пройти тестирование: /test").format(
             count_users=count_users,
         )
@@ -43,9 +46,13 @@ async def register_user(message: types.Message):
         text = ("Приветствую Вас!\n"
              "Количество пользователей в базе данных: {count_users}\n"
              "\n"
-             "Ссылка для участников Вашей группы: {bot_link}\n"
+             "Ввести фамилию и имя: /name (обязательно)\n"
+             "\n"
+             "Реферальная ссылка Вашей группы: {bot_link}\n"
+             "Предоставьте данную ссылку всем участникам Вашей группы для входа в чат, чтобы бот занёс всех в одну группу.\n"
              "Посмотреть участников Вашей группы: /members\n"
-             "Проверить лабораторную работу: /labs\n"
+             "\n"
+             "Проверить лабораторную работу: /lab\n"
              "Пройти тестирование: /test").format(
         count_users=count_users,
         bot_link=bot_link
@@ -56,19 +63,46 @@ async def register_user(message: types.Message):
     await bot.send_message(chat_id, text)
 
 
-@dp.message_handler(commands=["cancel"], state=NewQuestion)
+
+@dp.message_handler(commands=["members"])
+async def check_members(message: types.Message):
+    members = await db.check_members()
+    text = ("Участники Вашей группы:\n{members}").format(members=members)
+    await message.answer(text)
+
+
+
+@dp.message_handler(commands=["cancel"], state=NewName)
 async def cancel(message: types.Message, state: FSMContext):
-    await message.answer("Вы отменили тестирование. Для повторной попытки введите /test.")
+    await message.answer("Вы отменили ввод данных. Для повторной попытки нажмите /name.")
     await state.reset_state()
 
-@dp.message_handler(commands=["cancel"], state=NewLab)
+@dp.message_handler(commands=["name"])
+async def name(message: types.Message):
+    name_exists = await db.check_name()
+    if name_exists:
+        await message.answer(f"Вы уже вводили свои данные. Вас зовут {name_exists}.")
+    else:
+        await message.answer(f"Введите Ваши фамилию и имя. Для отмены нажмите /cancel.")
+        await NewName.Name.set()
+
+@dp.message_handler(state=NewName.Name)
+async def set_name(message: types.Message, state: FSMContext):
+    real_name = message.text
+    await db.update_name(real_name)
+    await message.answer(f"Вы записаны в базу как {real_name}.")
+    await state.reset_state()
+
+
+
+@dp.message_handler(commands=["cancel"], state=NewQuestion)
 async def cancel(message: types.Message, state: FSMContext):
-    await message.answer("Вы отменили проверку. Для повторной попытки введите /labs.")
+    await message.answer("Вы отменили тестирование. Для повторной попытки нажмите /test.")
     await state.reset_state()
 
 @dp.message_handler(commands=["test"])
 async def test(message: types.Message):
-    await message.answer("Для прожолжения нажмите /enter или введите любой текст. Для отмены нажмите /cancel.")
+    await message.answer("Для продолжения нажмите /enter или введите любой текст. Для отмены нажмите /cancel.")
     await NewQuestion.Question.set()
 
 @dp.message_handler(state=NewQuestion.Question)
@@ -83,7 +117,7 @@ async def question(message: types.Message, state: FSMContext):
         await message.answer(text)
         await state.reset_state()
     else:
-        var = await db.row()
+        var = await db.get_question()
         while True:
             k = 0
             r_r = random.choice(range(n))
@@ -140,49 +174,117 @@ async def answer(message: types.Message, state: FSMContext):
     if group_id:
         labs = await db.check_group_labs()
         await db.update_labs(labs)
-    await message.answer("Для прожолжения нажмите /enter или введите любой текст. Для отмены нажмите /cancel.")
+    await message.answer("Для продолжения нажмите /enter или введите любой текст. Для отмены нажмите /cancel.")
     await NewQuestion.Question.set()
 
-@dp.message_handler(commands=["members"])
-async def check_members(message: types.Message):
-    members = await db.check_members()
-    text = ("Участники Вашей группы:\n{members}").format(members=members)
-    await message.answer(text)
 
-@dp.message_handler(commands=["labs"])
+
+@dp.message_handler(commands=["cancel"], state=NewLab)
+async def cancel(message: types.Message, state: FSMContext):
+    await message.answer("Вы отменили проверку. Для повторной попытки нажмите /lab.")
+    await state.reset_state()
+
+@dp.message_handler(commands=["lab"])
 async def lab(message: types.Message):
-    await message.answer("Загрузите .pickle-файл для проверки лабораторной работы. Для отмены нажмите /cancel.")
+    await message.answer("Для продолжения нажмите /enter или введите любой текст. Для отмены нажмите /cancel.")
     await NewLab.Lab.set()
 
-@dp.message_handler(state=NewLab.Lab, content_types=['document'])
-async def result(message: types.Message, state: FSMContext):
-    import urllib
-    from config import TOKEN
+@dp.message_handler(state=NewLab.Lab)
+async def check_lab(message: types.Message, state: FSMContext):
+    import os.path
+    await message.answer("Введите номер лабораторной работы для проверки. Для отмены нажмите /cancel.")
+    user_answer = message.text
     user = types.User.get_current()
-    user_id = user.id
-    document_id = message.document.file_id
-    file_info = await bot.get_file(document_id)
-    fi = file_info.file_path
-    name = message.document.file_name
+    real_name = user.real_name
 
-    ext = f" {name} "
-    check = f"pickle"
-    if check not in ext:
-        await message.answer("Файл должен быть разрешения .pickle!\n")
-        await message.answer("Проверка отменена. Для повторной попытки нажмите /labs.")
-        await state.reset_state()
+    dir1 = f'C:/ginodb/labs/{real_name}/data1.csv'
+    if os.path.isfile(dir1):
+        pass
     else:
-        urllib.request.urlretrieve(f'https://api.telegram.org/file/bot{TOKEN}/{user_id}/{fi}', f'./{name}')
-        await bot.send_message(message.from_user.id, 'Файл успешно сохранён!')
+        await message.answer(
+                "Отсутствует файл data1.csv! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+        await state.reset_state()
 
-    lab_number = 1  # Номер лабораторной работы
+    dir2 = f'C:/ginodb/labs/{real_name}/data2.csv'
+    if os.path.isfile(dir2):
+        pass
+    else:
+        await message.answer(
+                "Отсутствует файл data2.csv! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+        await state.reset_state()
+
+    if user_answer == "1":
+        dir3 = f'C:/ginodb/labs/{real_name}/neighbors.pickle'
+        os.path.isfile(dir3)
+        if os.path.isfile(dir3):
+            pass
+        else:
+            await message.answer(
+                "Отсутствует файл neighbors.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+            await state.reset_state()
+
+    if user_answer == "2":
+        dir3 = f'C:/ginodb/labs/{real_name}/neighbors.pickle'
+        os.path.isfile(dir3)
+        if os.path.isfile(dir3):
+            pass
+        else:
+            await message.answer(
+                "Отсутствует файл neighbors.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+            await state.reset_state()
+
+    if user_answer == "3":
+        dir3 = f'C:/ginodb/labs/{real_name}/logreg1.pickle'
+        os.path.isfile(dir3)
+        if os.path.isfile(dir3):
+            pass
+        else:
+            await message.answer(
+                "Отсутствует файл logreg1.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+            await state.reset_state()
+        dir4 = f'C:/ginodb/labs/{real_name}/logreg2.pickle'
+        os.path.isfile(dir4)
+        if os.path.isfile(dir4):
+            pass
+        else:
+            await message.answer(
+                "Отсутствует файл logreg2.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+            await state.reset_state()
+
+    if user_answer == "3":
+        dir3 = f'C:/ginodb/labs/{real_name}/tree.pickle'
+        os.path.isfile(dir3)
+        if os.path.isfile(dir3):
+            pass
+        else:
+            await message.answer(
+                "Отсутствует файл tree.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+            await state.reset_state()
+        dir4 = f'C:/ginodb/labs/{real_name}/forest.pickle'
+        os.path.isfile(dir4)
+        if os.path.isfile(dir4):
+            pass
+        else:
+            await message.answer(
+                "Отсутствует файл forest.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+            await state.reset_state()
+        dir5 = f'C:/ginodb/labs/{real_name}/boosting.pickle'
+        os.path.isfile(dir5)
+        if os.path.isfile(dir5):
+            pass
+        else:
+            await message.answer(
+                "Отсутствует файл boosting.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+            await state.reset_state()
+
+    lab_number = user_answer  # Номер лабораторной работы
     lab_result = 1  # Результат лабораторной работы
 
-    row1 = await db.raw1()
-    row2 = await db.raw2()
-    if row1:
-        for i in row1:
-            for j in row2:
+    number = await db.get_lab_number()
+    result = await db.get_lab_result()
+    if number:
+        for i in number:
+            for j in result:
                 if int(i[0]) == lab_number and j[0] == True:
                     await message.answer(f"Вы уже выполнили эту лабораторную работу!")
                     await state.reset_state()
@@ -196,7 +298,7 @@ async def result(message: types.Message, state: FSMContext):
                     if lab_result == 1:
                         item.result = True
                         labs_done = await db.check_labs()
-                        await db.update_labs(labs_done + 1)
+                        await db.update_labs(labs_done+1)
                         labs = await db.check_labs()
                         await db.update_group_labs(labs)
                         await message.answer(f"Лабораторная работа №{lab_number} выполнена верно!")
@@ -216,7 +318,7 @@ async def result(message: types.Message, state: FSMContext):
         if lab_result == 1:
             item.result = True
             labs_done = await db.check_labs()
-            await db.update_labs(labs_done + 1)
+            await db.update_labs(labs_done+1)
             labs = await db.check_labs()
             await db.update_group_labs(labs)
             await message.answer(f"Лабораторная работа №{lab_number} выполнена верно!")
@@ -226,6 +328,8 @@ async def result(message: types.Message, state: FSMContext):
         await state.update_data(item=item)
         await item.create()
         await state.reset_state()
+
+
 
 @dp.message_handler()
 async def other_echo(message: Message):
