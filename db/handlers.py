@@ -42,7 +42,7 @@ async def register_user(message: types.Message):
              "Ввести фамилию и имя: /name (обязательно)\n"
              "\n"
              "Реферальная ссылка Вашей группы: {bot_link}\n"
-             "Предоставьте данную ссылку всем участникам Вашей группы для входа в чат, чтобы бот занёс всех в одну группу.\n"
+             "Предоставьте данную ссылку всем участникам Вашей группы для входа в чат, чтобы бот занёс вас в одну группу.\n"
              "Посмотреть участников Вашей группы: /members\n"
              "\n"
              "Проверить лабораторную работу: /lab\n"
@@ -175,7 +175,7 @@ async def cancel(message: types.Message, state: FSMContext):
 
 @dp.message_handler(commands=["lab"])
 async def lab(message: types.Message):
-    await message.answer("Введите номер лабораторной работы для проверки. Для отмены нажмите /cancel.")
+    await message.answer("Введите номер лабораторной работы, которую хотите проверить. Для отмены нажмите /cancel.")
     await NewLab.Lab.set()
 
 @dp.message_handler(state=NewLab.Lab)
@@ -246,11 +246,20 @@ async def check_lab(message: types.Message, state: FSMContext):
         dir3 = f'C:/ginodb/labs/{real_name}/lab4_RF.pickle'
         os.path.isfile(dir3)
         if os.path.isfile(dir3):
-            res = check_the_lab(dir1, dir2, dir3)
-            await message.answer(res)
+            res1 = check_the_lab(dir1, dir2, dir3)
+            await message.answer(res1)
         else:
             await message.answer(
                 "Отсутствует файл lab4_RF.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+            await state.reset_state()
+        dir4 = f'C:/ginodb/labs/{real_name}/lab4_CB.pickle'
+        os.path.isfile(dir4)
+        if os.path.isfile(dir4):
+            res2 = check_the_lab(dir1, dir2, dir4)
+            await message.answer(res2)
+        else:
+            await message.answer(
+                "Отсутствует файл lab4_CB.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
             await state.reset_state()
 
 
