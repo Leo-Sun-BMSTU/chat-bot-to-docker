@@ -1,26 +1,19 @@
-import os
-import asyncio
 import datetime
 import random
 import yaml
 from datetime import datetime
-
-from asyncio import sleep
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart
 from aiogram.types import Message
-
 import database
 from config import admin_id
 from load_all import dp, bot
-
 from states import NewName, NewQuestion, NewLab
 from database import User, Lab, Test
-
+from checking import check_the_lab
 
 db = database.DBCommands()
-
 
 @dp.message_handler(CommandStart())
 async def register_user(message: types.Message):
@@ -63,13 +56,11 @@ async def register_user(message: types.Message):
     await bot.send_message(chat_id, text)
 
 
-
 @dp.message_handler(commands=["members"])
 async def check_members(message: types.Message):
     members = await db.check_members()
     text = ("Участники Вашей группы:\n{members}").format(members=members)
     await message.answer(text)
-
 
 
 @dp.message_handler(commands=["cancel"], state=NewName)
@@ -92,7 +83,6 @@ async def set_name(message: types.Message, state: FSMContext):
     await db.update_name(real_name)
     await message.answer(f"Вы записаны в базу как {real_name}.")
     await state.reset_state()
-
 
 
 @dp.message_handler(commands=["cancel"], state=NewQuestion)
@@ -178,7 +168,6 @@ async def answer(message: types.Message, state: FSMContext):
     await NewQuestion.Question.set()
 
 
-
 @dp.message_handler(commands=["cancel"], state=NewLab)
 async def cancel(message: types.Message, state: FSMContext):
     await message.answer("Вы отменили проверку. Для повторной попытки нажмите /lab.")
@@ -186,16 +175,15 @@ async def cancel(message: types.Message, state: FSMContext):
 
 @dp.message_handler(commands=["lab"])
 async def lab(message: types.Message):
-    await message.answer("Для продолжения нажмите /enter или введите любой текст. Для отмены нажмите /cancel.")
+    await message.answer("Введите номер лабораторной работы для проверки. Для отмены нажмите /cancel.")
     await NewLab.Lab.set()
 
 @dp.message_handler(state=NewLab.Lab)
 async def check_lab(message: types.Message, state: FSMContext):
     import os.path
-    await message.answer("Введите номер лабораторной работы для проверки. Для отмены нажмите /cancel.")
     user_answer = message.text
     user = types.User.get_current()
-    real_name = user.real_name
+    real_name = await db.check_name()
 
     dir1 = f'C:/ginodb/labs/{real_name}/data1.csv'
     if os.path.isfile(dir1):
@@ -204,7 +192,6 @@ async def check_lab(message: types.Message, state: FSMContext):
         await message.answer(
                 "Отсутствует файл data1.csv! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
         await state.reset_state()
-
     dir2 = f'C:/ginodb/labs/{real_name}/data2.csv'
     if os.path.isfile(dir2):
         pass
@@ -214,71 +201,62 @@ async def check_lab(message: types.Message, state: FSMContext):
         await state.reset_state()
 
     if user_answer == "1":
-        dir3 = f'C:/ginodb/labs/{real_name}/neighbors.pickle'
+        dir3 = f'C:/ginodb/labs/{real_name}/lab1.pickle'
         os.path.isfile(dir3)
         if os.path.isfile(dir3):
-            pass
+            res = check_the_lab(dir1, dir2, dir3)
+            await message.answer(res)
         else:
             await message.answer(
-                "Отсутствует файл neighbors.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+                "Отсутствует файл lab1.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
             await state.reset_state()
 
     if user_answer == "2":
-        dir3 = f'C:/ginodb/labs/{real_name}/neighbors.pickle'
+        dir3 = f'C:/ginodb/labs/{real_name}/lab2.pickle'
         os.path.isfile(dir3)
         if os.path.isfile(dir3):
-            pass
+            res = check_the_lab(dir1, dir2, dir3)
+            await message.answer(res)
         else:
             await message.answer(
-                "Отсутствует файл neighbors.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+                "Отсутствует файл lab2.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
             await state.reset_state()
 
     if user_answer == "3":
-        dir3 = f'C:/ginodb/labs/{real_name}/logreg1.pickle'
+        dir3 = f'C:/ginodb/labs/{real_name}/lab3_l1.pickle'
         os.path.isfile(dir3)
         if os.path.isfile(dir3):
-            pass
+            res1 = check_the_lab(dir1, dir2, dir3)
+            await message.answer(res1)
         else:
             await message.answer(
-                "Отсутствует файл logreg1.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+                "Отсутствует файл lab3_l1.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
             await state.reset_state()
-        dir4 = f'C:/ginodb/labs/{real_name}/logreg2.pickle'
+        dir4 = f'C:/ginodb/labs/{real_name}/lab3_l2.pickle'
         os.path.isfile(dir4)
         if os.path.isfile(dir4):
-            pass
+            res2 = check_the_lab(dir1, dir2, dir4)
+            await message.answer(res2)
         else:
             await message.answer(
-                "Отсутствует файл logreg2.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+                "Отсутствует файл lab3_l2.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
             await state.reset_state()
 
-    if user_answer == "3":
-        dir3 = f'C:/ginodb/labs/{real_name}/tree.pickle'
+    if user_answer == "4":
+        dir3 = f'C:/ginodb/labs/{real_name}/lab4_RF.pickle'
         os.path.isfile(dir3)
         if os.path.isfile(dir3):
-            pass
+            res = check_the_lab(dir1, dir2, dir3)
+            await message.answer(res)
         else:
             await message.answer(
-                "Отсутствует файл tree.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
-            await state.reset_state()
-        dir4 = f'C:/ginodb/labs/{real_name}/forest.pickle'
-        os.path.isfile(dir4)
-        if os.path.isfile(dir4):
-            pass
-        else:
-            await message.answer(
-                "Отсутствует файл forest.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
-            await state.reset_state()
-        dir5 = f'C:/ginodb/labs/{real_name}/boosting.pickle'
-        os.path.isfile(dir5)
-        if os.path.isfile(dir5):
-            pass
-        else:
-            await message.answer(
-                "Отсутствует файл boosting.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
+                "Отсутствует файл lab4_RF.pickle! Если Вы отправляли этот файл по почте, попробуйте произвести проверку позже. Файл ожидает загрузки.")
             await state.reset_state()
 
-    lab_number = user_answer  # Номер лабораторной работы
+
+    lab_number = 1  # Номер лабораторной работы
     lab_result = 1  # Результат лабораторной работы
+
 
     number = await db.get_lab_number()
     result = await db.get_lab_result()
@@ -330,8 +308,6 @@ async def check_lab(message: types.Message, state: FSMContext):
         await state.reset_state()
 
 
-
 @dp.message_handler()
 async def other_echo(message: Message):
     await message.answer(message.text)
-
