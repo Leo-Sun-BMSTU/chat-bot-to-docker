@@ -5,11 +5,9 @@ from sqlalchemy import (Column, Integer, BigInteger, String,
                         Sequence, TIMESTAMP, Boolean)
 from sqlalchemy import sql
 from datetime import datetime
-
 from config import db_pass, db_user, host
 
 db = Gino()
-
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -30,7 +28,6 @@ class User(db.Model):
         return "<User(id='{}', fullname='{}', username='{}')>".format(
             self.id, self.full_name, self.username)
 
-
 class Lab(db.Model):
     __tablename__ = 'labs'
     query: sql.Select
@@ -46,7 +43,6 @@ class Lab(db.Model):
         return "<Item(id='{}', name='{}', price='{}')>".format(
             self.id, self.name, self.price)
 
-
 class Test(db.Model):
     __tablename__ = 'tests'
     query: sql.Select
@@ -58,7 +54,6 @@ class Test(db.Model):
     user_answer = Column(String(250))
     result = Column(Boolean, default=False)
     date_time = Column(TIMESTAMP)
-
 
 class DBCommands:
 
@@ -113,7 +108,6 @@ class DBCommands:
             for num, group_id in enumerate(members)
         ])
 
-
     # Получить и записать фамилию и имя; поле "real_name" таблицы "User"
     async def check_name(self):
         user_id = types.User.get_current().id
@@ -126,7 +120,6 @@ class DBCommands:
         user = await User.query.where(User.user_id == user_id).gino.first()
         real_name = await User.update.values(real_name=name).where(User.id == user.id).gino.status()
         return real_name
-
 
     # Получить и записать количество выданных вопросов; поле "questions_given" таблицы "User"
     async def check_questions(self):
@@ -141,7 +134,6 @@ class DBCommands:
         questions_given = await User.update.values(questions_given=questions).where(User.id == user.id).gino.status()
         return questions_given
 
-
     # Получить и записать количество правильных ответов; поле "right_answers" таблицы "User"
     async def check_answers(self):
         user_id = types.User.get_current().id
@@ -154,7 +146,6 @@ class DBCommands:
         user = await User.query.where(User.user_id == user_id).gino.first()
         right_answers = await User.update.values(right_answers=answers).where(User.id == user.id).gino.status()
         return right_answers
-
 
     # Получить и записать количество выполенных лаб; поле "labs_done" таблицы "User"
     async def check_labs(self):
@@ -169,7 +160,6 @@ class DBCommands:
         labs_done = await User.update.values(labs_done=labs_done).where(User.id == user.id).gino.status()
         return labs_done
 
-
     # Получить и записать количество выполенных группой лаб; поле "labs_done" таблицы "User"
     async def check_group_labs(self):
         user_id = types.User.get_current().id
@@ -183,7 +173,6 @@ class DBCommands:
         group_labs = await User.update.values(labs_done=group_labs).where(User.group_id == user.id).gino.status()
         return group_labs
 
-
     # Достать номер лабораторной работы и результат её выполнения
     async def get_lab_number(self):
         user_id = types.User.get_current().id
@@ -196,14 +185,12 @@ class DBCommands:
         lab_result = await Lab.select('result').where(Lab.user_id == user_id).gino.all()
         return lab_result
 
-
     # Достать значения выданных вопросов
     async def get_question(self):
         user_id = types.User.get_current().id
         user = await Test.query.where(Test.user_id == user_id).gino.first()
         question = await Test.select('question').where(Test.user_id == user_id).gino.all()
         return question
-
 
 async def create_db():
     await db.set_bind(f'postgresql://{db_user}:{db_pass}@{host}/gino')
