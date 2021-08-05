@@ -18,6 +18,7 @@ class User(db.Model):
     user_id = Column(BigInteger)
     full_name = Column(String(100))
     username = Column(String(50))
+    real_name = Column(String(50))
     group_id = Column(Integer)
     labs_done = Column(Integer, default=0)
     questions_given = Column(Integer, default=0)
@@ -86,6 +87,20 @@ class DBCommands:
         total = await db.func.count(User.id).gino.scalar()
         return total
 
+    async def check_id(self):
+        user_id = types.User.get_current().id
+        user = await User.query.where(User.user_id == user_id).gino.first()
+        group_id = await User.select('id').where(User.id == user.id).gino.first()
+        for i, j in enumerate(group_id):
+            return j
+
+    async def check_group_id(self):
+        user_id = types.User.get_current().id
+        user = await User.query.where(User.user_id == user_id).gino.first()
+        group_id = await User.select('group_id').where(User.id == user.id).gino.first()
+        for i, j in enumerate(group_id):
+            return j
+
     async def check_members(self):
         bot = Bot.get_current()
         user_id = types.User.get_current().id
@@ -98,95 +113,101 @@ class DBCommands:
             for num, group_id in enumerate(members)
         ])
 
+
+    # Получить и записать фамилию и имя; поле "real_name" таблицы "User"
+    async def check_name(self):
+        user_id = types.User.get_current().id
+        user = await User.query.where(User.user_id == user_id).gino.first()
+        real_name = await User.select('real_name').where(User.id == user.id).gino.first()
+        for i, j in enumerate(real_name):
+            return j
+    async def update_name(self, name):
+        user_id = types.User.get_current().id
+        user = await User.query.where(User.user_id == user_id).gino.first()
+        real_name = await User.update.values(real_name=name).where(User.id == user.id).gino.status()
+        return real_name
+
+
+    # Получить и записать количество выданных вопросов; поле "questions_given" таблицы "User"
     async def check_questions(self):
         user_id = types.User.get_current().id
         user = await User.query.where(User.user_id == user_id).gino.first()
         questions_given = await User.select('questions_given').where(User.id == user.id).gino.first()
-        for questions, empty in enumerate(questions_given):
-            return empty
-
-    async def check_answers(self):
-        user_id = types.User.get_current().id
-        user = await User.query.where(User.user_id == user_id).gino.first()
-        right_answers = await User.select('right_answers').where(User.id == user.id).gino.first()
-        for answers, empty in enumerate(right_answers):
-            return empty
-
-    async def check_labs(self):
-        user_id = types.User.get_current().id
-        user = await User.query.where(User.user_id == user_id).gino.first()
-        labs_done = await User.select('labs_done').where(User.id == user.id).gino.first()
-        for labs, empty in enumerate(labs_done):
-            return empty
-
-    async def check_id(self):
-        user_id = types.User.get_current().id
-        user = await User.query.where(User.user_id == user_id).gino.first()
-        group_id = await User.select('id').where(User.id == user.id).gino.first()
-        for some, empty in enumerate(group_id):
-            return empty
-
-    async def check_group_id(self):
-        user_id = types.User.get_current().id
-        user = await User.query.where(User.user_id == user_id).gino.first()
-        group_id = await User.select('group_id').where(User.id == user.id).gino.first()
-        for some, empty in enumerate(group_id):
-            return empty
-
-    async def check_group_labs(self):
-        user_id = types.User.get_current().id
-        user = await User.query.where(User.user_id == user_id).gino.first()
-        group_labs = await User.select('labs_done').where(User.id == user.group_id).gino.first()
-        for labs, empty in enumerate(group_labs):
-            return empty
-
+        for i, j in enumerate(questions_given):
+            return j
     async def update_questions(self, questions):
         user_id = types.User.get_current().id
         user = await User.query.where(User.user_id == user_id).gino.first()
         questions_given = await User.update.values(questions_given=questions).where(User.id == user.id).gino.status()
         return questions_given
 
+
+    # Получить и записать количество правильных ответов; поле "right_answers" таблицы "User"
+    async def check_answers(self):
+        user_id = types.User.get_current().id
+        user = await User.query.where(User.user_id == user_id).gino.first()
+        right_answers = await User.select('right_answers').where(User.id == user.id).gino.first()
+        for i, j in enumerate(right_answers):
+            return j
     async def update_answers(self, answers):
         user_id = types.User.get_current().id
         user = await User.query.where(User.user_id == user_id).gino.first()
         right_answers = await User.update.values(right_answers=answers).where(User.id == user.id).gino.status()
         return right_answers
 
+
+    # Получить и записать количество выполенных лаб; поле "labs_done" таблицы "User"
+    async def check_labs(self):
+        user_id = types.User.get_current().id
+        user = await User.query.where(User.user_id == user_id).gino.first()
+        labs_done = await User.select('labs_done').where(User.id == user.id).gino.first()
+        for i, j in enumerate(labs_done):
+            return j
     async def update_labs(self, labs_done):
         user_id = types.User.get_current().id
         user = await User.query.where(User.user_id == user_id).gino.first()
         labs_done = await User.update.values(labs_done=labs_done).where(User.id == user.id).gino.status()
         return labs_done
 
-    async def update_group_labs(self, labs):
+
+    # Получить и записать количество выполенных группой лаб; поле "labs_done" таблицы "User"
+    async def check_group_labs(self):
         user_id = types.User.get_current().id
         user = await User.query.where(User.user_id == user_id).gino.first()
-        labs = await User.update.values(labs_done=labs).where(User.group_id == user.id).gino.status()
-        return labs
+        group_labs = await User.select('labs_done').where(User.id == user.group_id).gino.first()
+        for i, j in enumerate(group_labs):
+            return j
+    async def update_group_labs(self, group_labs):
+        user_id = types.User.get_current().id
+        user = await User.query.where(User.user_id == user_id).gino.first()
+        group_labs = await User.update.values(labs_done=group_labs).where(User.group_id == user.id).gino.status()
+        return group_labs
 
-    async def row(self):
+
+    # Достать номер лабораторной работы и результат её выполнения
+    async def get_lab_number(self):
+        user_id = types.User.get_current().id
+        user = await Lab.query.where(Lab.user_id == user_id).gino.first()
+        lab_number = await Lab.select('lab_number').where(Lab.user_id == user_id).gino.all()
+        return lab_number
+    async def get_lab_result(self):
+        user_id = types.User.get_current().id
+        user = await Lab.query.where(Lab.user_id == user_id).gino.first()
+        lab_result = await Lab.select('result').where(Lab.user_id == user_id).gino.all()
+        return lab_result
+
+
+    # Достать значения выданных вопросов
+    async def get_question(self):
         user_id = types.User.get_current().id
         user = await Test.query.where(Test.user_id == user_id).gino.first()
-        row = await Test.select('question').where(Test.user_id == user_id).gino.all()
-        return row
-
-    async def raw1(self):
-        user_id = types.User.get_current().id
-        user = await Lab.query.where(Lab.user_id == user_id).gino.first()
-        raw1 = await Lab.select('lab_number').where(Lab.user_id == user_id).gino.all()
-        return raw1
-
-    async def raw2(self):
-        user_id = types.User.get_current().id
-        user = await Lab.query.where(Lab.user_id == user_id).gino.first()
-        raw2 = await Lab.select('result').where(Lab.user_id == user_id).gino.all()
-        return raw2
+        question = await Test.select('question').where(Test.user_id == user_id).gino.all()
+        return question
 
 
 async def create_db():
     await db.set_bind(f'postgresql://{db_user}:{db_pass}@{host}/gino')
 
-    # Create tables
     db.gino: GinoSchemaVisitor
     await db.gino.drop_all()
     await db.gino.create_all()
