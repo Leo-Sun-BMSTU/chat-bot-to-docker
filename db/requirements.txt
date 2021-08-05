@@ -1,5 +1,0 @@
-asyncpg
-aiogram
-sqlalchemy
-gino
-python-dotenv
