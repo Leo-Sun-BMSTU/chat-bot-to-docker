@@ -11,7 +11,7 @@ from aiogram.dispatcher.filters import CommandStart
 from aiogram.types import Message
 
 import database
-from config import admin_id
+from telegram.config import admin_id
 from load_all import dp, bot
 
 from states import NewQuestion, NewLab
@@ -157,7 +157,7 @@ async def lab(message: types.Message):
 @dp.message_handler(state=NewLab.Lab, content_types=['document'])
 async def result(message: types.Message, state: FSMContext):
     import urllib
-    from config import TOKEN
+    from telegram.config import TOKEN
     user = types.User.get_current()
     user_id = user.id
     document_id = message.document.file_id

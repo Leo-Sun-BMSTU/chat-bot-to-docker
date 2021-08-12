@@ -2,7 +2,7 @@ import asyncio
 
 from aiogram import executor
 
-from config import admin_id
+from telegram.config import admin_id
 from database import create_db
 from load_all import bot
 
