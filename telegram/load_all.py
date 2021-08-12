@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from aiogram import Bot
@@ -14,4 +13,3 @@ storage = MemoryStorage()
 
 bot = Bot(token=TOKEN, parse_mode="HTML")
 dp = Dispatcher(bot, storage=storage)
-
