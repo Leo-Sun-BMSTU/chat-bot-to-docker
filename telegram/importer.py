@@ -27,7 +27,7 @@ class Importer:
             print("Incorrect file name")
         try:
             with open(path, 'rb') as f1:
-                self._data = pickle.load(f1, encoding='UTF-8')
+                self._data = pickle.load(f1, encoding='utf-8')
                 print("File {} is pickle".format(path))
                 return self
         except ValueError:
