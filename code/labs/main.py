@@ -1,8 +1,8 @@
 from sklearn.model_selection import train_test_split
-from iu10_labs.models.logreg.Classifier import Classifier
-from iu10_labs.models.logreg.Importer import Importer
-from iu10_labs.models.logreg.Сarcass import Carcass
-from iu10_labs.models.logreg.Estimator import Estimator
+from code.labs import Classifier
+from code.labs import Importer
+from code.labs import Carcass
+from code.labs import Estimator
 
 # Import raw data. Normalizing. Train test split.
 imp_df_carcass = Importer()

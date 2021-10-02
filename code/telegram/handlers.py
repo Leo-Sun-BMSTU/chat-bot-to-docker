@@ -7,10 +7,10 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import CommandStart
 from aiogram.types import Message
 import database
-from telegram.config import admin_id
+from config import admin_id
 from load_all import dp, bot
 from states import NewName, NewQuestion, NewLab
-from database import User, Lab, Test
+from database import Lab, Test
 from checking import check_the_lab
 
 db = database.DBCommands()

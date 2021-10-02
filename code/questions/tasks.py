@@ -1,5 +1,5 @@
 import random
-from questions.base_question import BaseQuestion
+from code.questions.base_question import BaseQuestion
 from numpy.random import randint
 from numpy.random import uniform
 import pandas as pd

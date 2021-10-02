@@ -1,5 +1,5 @@
 import pandas as pd
-from labs import constants
+from code.labs import constants
 
 class Prepropcess:
 

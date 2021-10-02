@@ -1,8 +1,8 @@
 import unittest
-from labs.preproces import *
 from numpy.random import uniform
 from numpy.random import randint
 import pandas as pd
+from code.labs.preproces import Prepropcess
 
 class TestPreprocess(unittest.TestCase):
 
